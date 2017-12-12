@@ -1,6 +1,10 @@
-from openpyxl import load_workbook
-import xml.etree.cElementTree as ET
+from openpyxl import load_workbook # excell maniuplation library 
+import xml.etree.cElementTree as ET # xml tree generator 
+import glob # file filter 
+import datetime # used for naming files 
+import os # used to create folder for storing xml
 
+# Indent XML into a beutified format 
 def indent(elem, level=0):
   i = "\n" + level*"  "
   if len(elem):
@@ -16,32 +20,44 @@ def indent(elem, level=0):
     if level and (not elem.tail or not elem.tail.strip()):
       elem.tail = i
 
-def buildTree():
-	root = ET.Element("root")
-	doc = ET.SubElement(root, "doc")
+# Load from excel and convert to XML 
+def buildTree(sheet_name, header_row, content_row):
+	workbook = ET.Element("Workbook")
+	sheet = ET.SubElement(workbook, "Worksheet", name=sheet_name)
 
-	ET.SubElement(doc, "field1", name="blah").text = "some value1"
-	ET.SubElement(doc, "field2", name="asdfasd").text = "some vlaue2"
+	header = ET.SubElement(sheet, "Row")
+	for data in header_row:
+		cell = ET.SubElement(header, "Cell")
+		ET.SubElement(cell, "Data", type="String").text = str(data.value)
 
-	indent(root)
+	row = ET.SubElement(sheet, "Row")
+	for data in content_row:
+		cell = ET.SubElement(row, "Cell")
+		ET.SubElement(cell, "Data", type=type(data.value).__name__).text = str(data.value)
 
-	tree = ET.ElementTree(root)
-  	tree.write("filename.xml", xml_declaration=True, encoding='utf-8', method="xml")
- 
+	indent(workbook)
+
+	tree = ET.ElementTree(workbook)
+	filename = "xml/" + str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.') + '.xml'
+  	tree.write(filename, xml_declaration=True, encoding='utf-8', method="xml")
+ 		
 '''
-main function, so this program can be called by python program.py
+main function, to run the script call python index.py
 '''
 if __name__ == "__main__":
-  buildTree()
+	if not os.path.exists('xml'):
+		os.makedirs('xml')
 
+	types = ('*.xlsx', '*.xlsm', "*.xltx", "*.xltm")
+	files_grabbed = []
+	for files in types:
+		files_grabbed.extend(glob.glob(files))
 
-# wb = load_workbook('proba.xlsx')
-# for sheet in wb.worksheets:
-# 	print "header"
-# 	for cell in list(sheet.rows)[0]:
-# 		print cell.value
-
-# 	if sheet.max_row > 1:
-# 		for row in sheet.rows[1:]:
-# 			for cell in row:
-# 				print cell.value
+	for f in files_grabbed: 
+		wb = load_workbook(f)
+		for sheet in wb.worksheets:
+			header = list(sheet.rows)[0]
+	 		if sheet.max_row > 1:
+	 			row_num = sheet.max_row
+	 			for row_index in range(2, row_num + 1):
+					buildTree(sheet.title, header, sheet[row_index])
