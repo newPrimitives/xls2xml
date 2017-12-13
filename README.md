@@ -1,5 +1,7 @@
 # Python xls2xml converter
 
+![](logo.png | width=100)
+
 This project contains a Python code for converting all Excell files (xlsx, xlsm, xltx, xltm) to pretified XML format. 
 
 ### Dependencies:
